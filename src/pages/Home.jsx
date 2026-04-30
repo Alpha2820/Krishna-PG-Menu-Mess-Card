@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import menu from "../data/menu";
 import {
   getTodayIndex,
@@ -18,6 +18,12 @@ const MEALS = [
 
 function Home() {
   const [activeMeal, setActiveMeal] = useState(getCurrentMealIndex());
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveMeal(getCurrentMealIndex());
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const todayData = menu[getTodayIndex()] || {
     day: "Today",
