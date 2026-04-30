@@ -1,4 +1,6 @@
-import menu from "../data/menu";
+import { useState, useEffect } from "react";
+import { db } from "../firebase";
+import { doc, onSnapshot } from "firebase/firestore";
 
 const DAYS = [
   "Sunday",
@@ -9,6 +11,15 @@ const DAYS = [
   "Friday",
   "Saturday",
 ];
+const DAY_KEYS = [
+  "sunday",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+];
 const today = new Date().getDay();
 
 const MEAL_CONFIG = {
@@ -18,13 +29,34 @@ const MEAL_CONFIG = {
 };
 
 function Weekly() {
+  const [menuData, setMenuData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "menu", "week"), (snap) => {
+      if (snap.exists()) setMenuData(snap.data());
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
+  if (loading) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: "#0d0d0d" }}
+      >
+        <p className="text-gray-500 text-sm animate-pulse">Loading menu...</p>
+      </div>
+    );
+  }
+
   return (
     <div
       className="min-h-screen text-white font-sans"
       style={{ background: "#0d0d0d" }}
     >
       <div className="max-w-2xl mx-auto px-4 pt-8 pb-28">
-        {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-white">Weekly Menu</h1>
           <p className="text-xs text-gray-500 uppercase tracking-widest mt-1">
@@ -32,10 +64,11 @@ function Weekly() {
           </p>
         </div>
 
-        {/* Day cards */}
         <div className="flex flex-col gap-3">
-          {menu.map((day, i) => {
+          {DAYS.map((dayLabel, i) => {
             const isToday = i === today;
+            const dayData = menuData?.[DAY_KEYS[i]] || {};
+
             return (
               <div
                 key={i}
@@ -68,13 +101,13 @@ function Weekly() {
                         color: isToday ? "#fbbf24" : "#6b7280",
                       }}
                     >
-                      {DAYS[i].slice(0, 2).toUpperCase()}
+                      {dayLabel.slice(0, 2).toUpperCase()}
                     </div>
                     <span
                       className="text-sm font-semibold tracking-wide"
                       style={{ color: isToday ? "#fbbf24" : "#e5e7eb" }}
                     >
-                      {DAYS[i]}
+                      {dayLabel}
                     </span>
                   </div>
 
@@ -98,20 +131,19 @@ function Weekly() {
                 <div className="px-4 py-3 flex flex-col gap-2.5">
                   {["breakfast", "lunch", "dinner"].map((meal) => {
                     const cfg = MEAL_CONFIG[meal];
-                    const items = day[meal]
-                      ? day[meal].split("+").map((i) => i.trim())
+                    const value = dayData[meal] || "";
+                    const items = value
+                      ? value.split("+").map((i) => i.trim())
                       : [];
+
                     return (
                       <div key={meal} className="flex items-start gap-3">
-                        {/* Icon */}
                         <div
                           className="w-7 h-7 shrink-0 rounded-lg flex items-center justify-center text-xs mt-0.5"
                           style={{ background: `${cfg.color}18` }}
                         >
                           {cfg.icon}
                         </div>
-
-                        {/* Label */}
                         <div className="w-16 shrink-0 pt-0.5">
                           <span
                             className="text-[10px] font-semibold uppercase tracking-wider"
@@ -120,8 +152,6 @@ function Weekly() {
                             {cfg.label}
                           </span>
                         </div>
-
-                        {/* Items */}
                         <div className="flex-1 flex flex-wrap gap-1.5">
                           {items.length > 1 ? (
                             items.map((it, idx) => (
@@ -139,7 +169,7 @@ function Weekly() {
                             ))
                           ) : (
                             <span className="text-sm text-gray-300">
-                              {day[meal] || "—"}
+                              {value || "—"}
                             </span>
                           )}
                         </div>
