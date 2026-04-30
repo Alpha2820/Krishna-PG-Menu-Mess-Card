@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import menu from "../data/menu";
+import { db } from "../firebase";
+import { doc, onSnapshot } from "firebase/firestore";
 import {
   getTodayIndex,
   getTomorrowIndex,
@@ -8,7 +9,16 @@ import {
 import Header from "../components/Header";
 import MealCard from "../components/MealCard";
 import TomorrowMenu from "../components/TomorrowMenu";
-import Navbar from "../components/Navbar";
+
+const DAYS = [
+  "sunday",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+];
 
 const MEALS = [
   { label: "Breakfast", key: "breakfast", icon: "☀️" },
@@ -18,6 +28,10 @@ const MEALS = [
 
 function Home() {
   const [activeMeal, setActiveMeal] = useState(getCurrentMealIndex());
+  const [menuData, setMenuData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Auto switch meal based on time
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveMeal(getCurrentMealIndex());
@@ -25,14 +39,46 @@ function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  const todayData = menu[getTodayIndex()] || {
-    day: "Today",
-    breakfast: "Loading...",
-    lunch: "Loading...",
-    dinner: "Loading...",
+  // ✅ Listen to Firestore in real time
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "menu", "week"), (snap) => {
+      if (snap.exists()) {
+        setMenuData(snap.data());
+      }
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
+  if (loading) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: "#0d0d0d" }}
+      >
+        <p className="text-gray-500 text-sm animate-pulse">Loading menu...</p>
+      </div>
+    );
+  }
+
+  const todayKey = DAYS[getTodayIndex()];
+  const tomorrowKey = DAYS[getTomorrowIndex()];
+
+  const todayData = {
+    day: todayKey.charAt(0).toUpperCase() + todayKey.slice(1),
+    breakfast: menuData?.[todayKey]?.breakfast || "Not updated",
+    lunch: menuData?.[todayKey]?.lunch || "Not updated",
+    dinner: menuData?.[todayKey]?.dinner || "Not updated",
   };
 
-  const tomorrowData = menu[getTomorrowIndex()];
+  const tomorrowRaw = menuData?.[tomorrowKey];
+  const tomorrowData = tomorrowRaw
+    ? {
+        day: tomorrowKey.charAt(0).toUpperCase() + tomorrowKey.slice(1),
+        ...tomorrowRaw,
+      }
+    : null;
+
   const activeMealData = MEALS[activeMeal];
 
   return (
@@ -40,8 +86,6 @@ function Home() {
       className="min-h-screen text-white font-sans"
       style={{ background: "#0d0d0d" }}
     >
-      <Navbar />
-
       <div className="max-w-2xl mx-auto px-4 pt-6 pb-28">
         <Header
           day={todayData.day}
