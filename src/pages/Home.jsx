@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, collection } from "firebase/firestore";
 import {
   getTodayIndex,
   getTomorrowIndex,
@@ -19,7 +19,6 @@ const DAYS = [
   "friday",
   "saturday",
 ];
-
 const MEALS = [
   { label: "Breakfast", key: "breakfast", icon: "☀️" },
   { label: "Lunch", key: "lunch", icon: "🍛" },
@@ -29,9 +28,11 @@ const MEALS = [
 function Home() {
   const [activeMeal, setActiveMeal] = useState(getCurrentMealIndex());
   const [menuData, setMenuData] = useState(null);
+  const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [todayIndex, setTodayIndex] = useState(getTodayIndex());
 
-  // Auto switch meal based on time
+  // ✅ Auto switch meal every minute
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveMeal(getCurrentMealIndex());
@@ -39,13 +40,37 @@ function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  // ✅ Listen to Firestore in real time
+  // ✅ Auto update date at midnight
+  useEffect(() => {
+    const checkMidnight = setInterval(() => {
+      const newIndex = getTodayIndex();
+      setTodayIndex((prev) => {
+        if (prev !== newIndex) {
+          setActiveMeal(getCurrentMealIndex());
+          return newIndex;
+        }
+        return prev;
+      });
+    }, 60000);
+    return () => clearInterval(checkMidnight);
+  }, []);
+
+  // ✅ Listen to menu from Firestore
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "menu", "week"), (snap) => {
-      if (snap.exists()) {
-        setMenuData(snap.data());
-      }
+      if (snap.exists()) setMenuData(snap.data());
       setLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
+  // ✅ Listen to announcements from Firestore
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "announcements"), (snap) => {
+      const data = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      // Sort by postedAt descending
+      data.sort((a, b) => b.createdAt - a.createdAt);
+      setAnnouncements(data);
     });
     return () => unsub();
   }, []);
@@ -61,7 +86,7 @@ function Home() {
     );
   }
 
-  const todayKey = DAYS[getTodayIndex()];
+  const todayKey = DAYS[todayIndex];
   const tomorrowKey = DAYS[getTomorrowIndex()];
 
   const todayData = {
@@ -81,6 +106,27 @@ function Home() {
 
   const activeMealData = MEALS[activeMeal];
 
+  const ANNOUNCEMENT_STYLES = {
+    warning: {
+      icon: "⚠️",
+      color: "#f59e0b",
+      bg: "rgba(245,158,11,0.08)",
+      border: "rgba(245,158,11,0.25)",
+    },
+    info: {
+      icon: "📢",
+      color: "#60a5fa",
+      bg: "rgba(96,165,250,0.08)",
+      border: "rgba(96,165,250,0.25)",
+    },
+    celebration: {
+      icon: "🎉",
+      color: "#10b981",
+      bg: "rgba(16,185,129,0.08)",
+      border: "rgba(16,185,129,0.25)",
+    },
+  };
+
   return (
     <div
       className="min-h-screen text-white font-sans"
@@ -92,6 +138,35 @@ function Home() {
           activeMeal={activeMeal}
           setActiveMeal={setActiveMeal}
         />
+
+        {/* ✅ Announcements from Firebase */}
+        {announcements.length > 0 && (
+          <div className="mt-4 flex flex-col gap-2">
+            {announcements.map(({ id, message, type, postedAt }) => {
+              const s = ANNOUNCEMENT_STYLES[type] || ANNOUNCEMENT_STYLES.info;
+              return (
+                <div
+                  key={id}
+                  className="rounded-xl px-4 py-3.5"
+                  style={{ background: s.bg, border: `1px solid ${s.border}` }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-base">{s.icon}</span>
+                    <p
+                      className="text-[10px] font-medium"
+                      style={{ color: s.color }}
+                    >
+                      {postedAt}
+                    </p>
+                  </div>
+                  <p className="text-sm text-white leading-relaxed">
+                    {message}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Today's Menu */}
         <section
@@ -142,7 +217,6 @@ function Home() {
             ))}
           </div>
 
-          {/* Active meal spotlight */}
           <div
             className="mt-4 p-4 rounded-xl"
             style={{ background: "#222", border: "1px solid #333" }}
@@ -156,14 +230,12 @@ function Home() {
           </div>
         </section>
 
-        {/* Tomorrow Section */}
         {tomorrowData && (
           <section className="mt-5">
             <TomorrowMenu tomorrowData={tomorrowData} />
           </section>
         )}
 
-        {/* Stats footer */}
         <div className="mt-6 grid grid-cols-3 gap-3">
           {[
             { label: "Meals/day", value: "3" },

@@ -1,19 +1,6 @@
-// When Firebase is added, just replace this array with:
-// const ANNOUNCEMENTS = await getDocs(collection(db, "announcements"))
-const ANNOUNCEMENTS = [
-  {
-    id: 1,
-    message: "No dinner on Sunday — Kitchen maintenance",
-    type: "warning", // warning | info | celebration
-    postedAt: "30 Apr, 8:00 AM",
-  },
-  {
-    id: 2,
-    message: "Special Holi dinner tonight! Gujiyas + Thandai 🎉",
-    type: "celebration",
-    postedAt: "29 Apr, 6:00 PM",
-  },
-];
+import { useState, useEffect } from "react";
+import { db } from "../firebase";
+import { collection, onSnapshot } from "firebase/firestore";
 
 const ANNOUNCEMENT_STYLES = {
   warning: {
@@ -61,13 +48,23 @@ const SPECIALS = [
 ];
 
 function Special() {
+  const [announcements, setAnnouncements] = useState([]);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "announcements"), (snap) => {
+      const data = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      data.sort((a, b) => b.createdAt - a.createdAt);
+      setAnnouncements(data);
+    });
+    return () => unsub();
+  }, []);
+
   return (
     <div
       className="min-h-screen text-white font-sans"
       style={{ background: "#0d0d0d" }}
     >
       <div className="max-w-2xl mx-auto px-4 pt-8 pb-28">
-        {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-white">Special Menu</h1>
           <p className="text-xs text-gray-500 uppercase tracking-widest mt-1">
@@ -75,15 +72,15 @@ function Special() {
           </p>
         </div>
 
-        {/* Announcements section — hidden if empty */}
-        {ANNOUNCEMENTS.length > 0 && (
+        {/* ✅ Announcements from Firebase */}
+        {announcements.length > 0 && (
           <div className="mb-5">
             <p className="text-[10px] text-gray-600 uppercase tracking-widest font-semibold mb-2 px-1">
               📢 Announcements
             </p>
             <div className="flex flex-col gap-2">
-              {ANNOUNCEMENTS.map(({ id, message, type, postedAt }) => {
-                const s = ANNOUNCEMENT_STYLES[type];
+              {announcements.map(({ id, message, type, postedAt }) => {
+                const s = ANNOUNCEMENT_STYLES[type] || ANNOUNCEMENT_STYLES.info;
                 return (
                   <div
                     key={id}
@@ -93,7 +90,6 @@ function Special() {
                       border: `1px solid ${s.border}`,
                     }}
                   >
-                    {/* Top row — icon + time */}
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-base">{s.icon}</span>
                       <p
@@ -103,8 +99,6 @@ function Special() {
                         {postedAt}
                       </p>
                     </div>
-
-                    {/* Message on its own line */}
                     <p className="text-sm text-white leading-relaxed">
                       {message}
                     </p>
@@ -154,7 +148,6 @@ function Special() {
                     style={{ background: color, opacity: 0.6 }}
                   />
                 </div>
-
                 <div className="px-4 py-3 flex flex-wrap gap-1.5">
                   {itemList.length > 1 ? (
                     itemList.map((it, idx) => (
@@ -179,7 +172,6 @@ function Special() {
           })}
         </div>
 
-        {/* Footer note */}
         <div
           className="mt-6 rounded-2xl p-4 flex items-start gap-3"
           style={{ background: "#141414", border: "1px solid #1f1f1f" }}
