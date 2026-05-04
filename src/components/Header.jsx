@@ -7,7 +7,7 @@ const MEALS = [
   { label: "Dinner", icon: "🌙", time: "7–9 PM" },
 ];
 
-const WEATHER_API_KEY = import.meta.env.VITE_WEATHER_API_KEY;
+const WEATHER_API_KEY = "d7835463f4ecc5b76a1a3fa4e5c3f757";
 const WEATHER_URL = `https://api.openweathermap.org/data/2.5/weather?q=Ghaziabad,IN&appid=${WEATHER_API_KEY}&units=metric`;
 
 // Weather icon mapping
