@@ -1,52 +1,61 @@
 # 🍽️ Krishna PG — Mess Menu App
 
-A clean, mobile-friendly web app for Krishna PG residents to check daily, weekly, and special mess menus.
+A mobile-first web app for Krishna PG residents to view mess menus, special meals, and mess details.
 
-## Features
+## Key Features
 
-- **Home** — Today's meal cards with live clock, active meal highlight, and tomorrow's preview
-- **Weekly** — Full 7-day menu with today highlighted
-- **Special** — Sunday specials, festival menus, and guest meal info
-- **About** — Mess timings and contact info
+- **Home** — Today’s meals with a live clock, active meal highlights, and a tomorrow preview
+- **Weekly** — Full 7-day mess schedule with today highlighted
+- **Special** — Sunday specials, festival menus, and guest meal information
+- **About** — Mess timings, contact details, and general PG info
+- **Login / Admin** — Authentication-ready admin access and protected admin pages
 
 ## Tech Stack
 
-- React + Vite
+- React 19 + Vite
 - Tailwind CSS
 - React Router DOM
+- Firebase
 - React Icons
 
 ## Getting Started
 
 ```bash
-# Install dependencies
 npm install
-
-# Start development server
 npm run dev
-
-# Build for production
-npm run build
 ```
+
+Open the app in your browser at `http://localhost:5173`.
+
+## Available Scripts
+
+- `npm run dev` — start the development server
+- `npm run build` — build the app for production
+- `npm run preview` — locally preview the production build
+- `npm run lint` — run ESLint against the source files
 
 ## Project Structure
 
 ```
 src/
+├── assets/              # Static media and images
 ├── components/
-│   ├── Header.jsx       # App header with meal tabs and live clock
-│   ├── MealCard.jsx     # Individual meal display card
-│   ├── Navbar.jsx       # Bottom navigation bar
-│   └── TomorrowMenu.jsx # Tomorrow's meal preview
+│   ├── Header.jsx       # App header, navigation tabs, and live time display
+│   ├── MealCard.jsx     # Menu card UI for each meal
+│   ├── Navbar.jsx       # Bottom navigation bar for page routing
+│   └── TomorrowMenu.jsx # Tomorrow’s meal preview component
 ├── data/
-│   └── menu.js          # Weekly menu data
+│   └── menu.js          # Mess menu data for daily and weekly views
 ├── pages/
-│   ├── Home.jsx         # Today's menu page
-│   ├── Weekly.jsx       # Full week overview
-│   ├── Special.jsx      # Special occasions menu
-│   └── About.jsx        # Mess info page
-└── utils/
-    └── dateHelper.js    # Date and meal timing utilities
+│   ├── About.jsx        # Mess timings and contact information
+│   ├── Admin.jsx        # Admin dashboard / protected page layout
+│   ├── Home.jsx         # Today’s menu and current meal view
+│   ├── Login.jsx        # Authentication page for admin access
+│   ├── Special.jsx      # Special menus and guest meal details
+│   └── Weekly.jsx       # Full weekly meal planner
+├── utils/
+│   └── dateHelper.js    # Date handling and meal timing utilities
+└── firebase.js          # Firebase configuration and initialization
 ```
 
 ## Meal Timings
@@ -57,7 +66,11 @@ src/
 | Lunch     | 12:00 – 2:00 PM |
 | Dinner    | 7:00 – 9:00 PM  |
 
+## Deployment
+
+1. Build the app: `npm run build`
+2. Serve the generated `dist/` folder with a static host or platform such as Vercel
+
 ---
 
-Built with ❤️ for Krishna PG residents  
-by Abhijeet Tiwari
+Built with ❤️ for Krishna PG residents by Abhijeet Tiwari
