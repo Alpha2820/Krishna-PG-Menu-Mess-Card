@@ -6,7 +6,8 @@ const MEALS = [
   { label: "Lunch", icon: "🍱", time: "12–2 PM" },
   { label: "Dinner", icon: "🌙", time: "7–9 PM" },
 ];
-const WEATHER_API_KEY = "d7835463f4ecc5b76a1a3fa4e5c3f757";
+
+const WEATHER_API_KEY = import.meta.env.VITE_WEATHER_API_KEY;
 const WEATHER_URL = `https://api.openweathermap.org/data/2.5/weather?q=Ghaziabad,IN&appid=${WEATHER_API_KEY}&units=metric`;
 
 // Weather icon mapping
@@ -49,6 +50,11 @@ function Header({ day, activeMeal, setActiveMeal }) {
   const [weather, setWeather] = useState({ temp: null, code: null });
 
   useEffect(() => {
+    if (!WEATHER_API_KEY) {
+      console.error("Missing VITE_WEATHER_API_KEY in .env");
+      return;
+    }
+
     const fetchWeather = async () => {
       try {
         const res = await fetch(WEATHER_URL);
